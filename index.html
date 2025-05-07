@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Fruity Fresh</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+  <style>
+    body {
+      padding-top: 70px;
+    }
+    .product-card img {
+      max-width: 100%;  
+      max-height: 200px; 
+      object-fit: contain; 
+      display: block; 
+      margin: 0 auto; 
+    }
+    .product-card .card:hover {
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+      transform: scale(1.02);
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+    .add-to-cart:hover {
+      background-color: #218838;
+    }
+    .cart-sidebar {
+      position: fixed;
+      top: 0;
+      right: -400px;
+      width: 300px;
+      height: 100%;
+      background: #fff;
+      box-shadow: -2px 0 5px rgba(0,0,0,0.3);
+      z-index: 1050;
+      transition: right 0.3s ease;
+    }
+    .cart-sidebar.active {
+      right: 0;
+    }
+    .cart-header {
+      background: #28a745;
+      color: white;
+      padding: 15px;
+      font-weight: bold;
+    }
+    .cart-item {
+      border-bottom: 1px solid #ccc;
+      padding: 10px;
+    }
+    .cart-total {
+      font-weight: bold;
+      font-size: 1.2em;
+      padding: 10px;
+    }
+    #cartToggle {
+      cursor: pointer;
+    }
+    .remove-item {
+      float: right;
+      color: red;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+    <nav class="navbar navbar-dark bg-success fixed-top">
+        <div class="container d-flex justify-content-between align-items-center">
+          <a class="navbar-brand" href="#"><i class="fas fa-store"></i> Fruity Fresh</a>
+          <input class="form-control w-50" id="searchBox" type="text" placeholder="Search for fruits...">
+          <span class="text-white ml-3" id="cartToggle"><i class="fas fa-shopping-cart"></i> My Cart</span>
+        </div>
+      </nav>
+<div class="container mt-3">
+  <div class="row" id="product-list">
+  </div>
+</div>
+<div class="cart-sidebar" id="cartSidebar">
+  <div class="cart-header">
+    <span>My Cart</span>
+    <button class="close float-right text-white" onclick="toggleCart()">&times;</button>
+  </div>
+  <div class="p-3" id="cart-items">
+    <p>Your cart is empty.</p>
+  </div>
+  <div class="cart-total text-right px-3">
+    Total: <span id="cart-total">₱0.00</span>
+  </div>
+  <div class="p-3">
+    <button class="btn btn-success btn-block" id="checkout-btn">Checkout</button>
+  </div>
+</div>
+<footer class="bg-dark text-white text-center p-3 mt-5">
+    <p>Created by: Code Leveling</p>
+  </footer>
+<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+<script>
+  const products = [
+    { id: 1, name: "Apple", price: 50, img: "apple.jpg", desc: "Fresh apples." },
+    { id: 2, name: "Banana", price: 65, img: "banana.jpg", desc: "Great for energy and potassium." },
+    { id: 3, name: "Orange", price: 25, img: "orange.jpg", desc: "Rich in Vitamin C." },
+    { id: 4, name: "Grapes", price: 180, img: "grapes.jpg", desc: "Perfectly sweet for snacks." },
+    { id: 5, name: "Mango", price: 90, img: "mango.jpg", desc: "Sweet and ripe mangoes." },
+    { id: 6, name: "Guava", price: 40, img: "guava.jpg", desc: "Healthy and delicious." },
+    { id: 7, name: "Plum", price: 50, img: "plum.jpg", desc: "Unique and flavorful." },
+    { id: 8, name: "Papaya", price: 30, img: "papaya.jpg", desc: "Good for digestion." },
+    { id: 9, name: "Watermelon", price: 120, img: "watermelon.jpg", desc: "Juicy and hydrating." },
+    { id: 10, name: "Pineapple", price: 85, img: "pineapple.jpg", desc: "Sweet & tangy flavor." },
+    { id: 11, name: "Kiwi", price: 50, img: "kiwi.jpg", desc: "Exotic and tasty." },
+    { id: 12, name: "Strawberry", price: 70, img: "strawberry.jpg", desc: "Deliciously sweet." },
+    { id: 13, name: "Peach", price: 60, img: "peach.jpg", desc: "Soft and juicy." },
+    { id: 14, name: "Blueberry", price: 80, img: "blueberry.jpg", desc: "Rich in antioxidants." },
+    { id: 15, name: "Cherry", price: 90, img: "cherry.jpg", desc: "Sweet and tart." },
+    { id: 16, name: "Lemon", price: 40, img: "lemon.jpg", desc: "Zesty and refreshing." },
+    { id: 17, name: "Melon", price: 75, img: "melon.jpg", desc: "Refreshing and sweet." },
+  ];
+
+  let cart = [];
+
+  function renderProducts(list) {
+    $("#product-list").empty();
+    list.forEach(p => {
+      const card = `
+        <div class="col-md-4 mb-4 product-card">
+          <div class="card h-100">
+            <img src="${p.img}" class="card-img-top" alt="${p.name}">
+            <div class="card-body">
+              <h5 class="card-title">${p.name}</h5>
+              <p class="card-text">${p.desc}</p>
+              <p class="card-text">₱${p.price.toFixed(2)}</p>
+              <button class="btn btn-primary btn-sm add-to-cart" data-id="${p.id}"><i class="fas fa-cart-plus"></i> Add to Cart</button>
+            </div>
+          </div>
+        </div>`;
+      $("#product-list").append(card);
+    });
+  }
+
+  function updateCart() {
+    const cartContainer = $("#cart-items");
+    cartContainer.empty();
+    if (cart.length === 0) {
+      cartContainer.html("<p>Your cart is empty.</p>");
+    } else {
+      cart.forEach(item => {
+        const line = `
+          <div class="cart-item">
+            <strong>${item.name}</strong><br>
+            ₱${item.price} x 
+            <input type="number" min="1" class="item-qty" data-id="${item.id}" value="${item.qty}" style="width: 50px;">
+            = ₱${(item.price * item.qty).toFixed(2)}
+          </div>`;
+        cartContainer.append(line);
+      });
+    }
+
+    const total = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
+    $("#cart-total").text(`₱${total.toFixed(2)}`);
+  }
+
+  function addToCart(id) {
+    const product = products.find(p => p.id == id);
+    const existing = cart.find(item => item.id == id);
+    if (existing) {
+      existing.qty += 1;
+    } else {
+      cart.push({ ...product, qty: 1 });
+    }
+    updateCart();
+  }
+
+  function toggleCart() {
+    $("#cartSidebar").toggleClass("active");
+  }
+
+  $(document).ready(function () {
+    renderProducts(products);
+
+    $(document).on("click", ".add-to-cart", function () {
+      const id = $(this).data("id");
+      addToCart(id);
+    });
+
+    $(document).on("input", ".item-qty", function () {
+      const id = $(this).data("id");
+      const qty = parseInt($(this).val());
+      const item = cart.find(i => i.id == id);
+      if (item && qty > 0) {
+        item.qty = qty;
+        updateCart();
+      }
+    });
+
+    $("#searchBox").on("input", function () {
+      const keyword = $(this).val().toLowerCase();
+      const filtered = products.filter(p =>
+        p.name.toLowerCase().includes(keyword) || p.desc.toLowerCase().includes(keyword)
+      );
+      renderProducts(filtered);
+    });
+
+    $("#cartToggle").click(function () {
+      toggleCart();
+    });
+
+    $("#checkout-btn").click(function () {
+      if (cart.length === 0) {
+        alert("Your cart is empty!");
+      } else {
+        alert("Thank you for your purchase!");
+        cart = [];
+        updateCart();
+      }
+    });
+  });
+</script>
+
+</body>
+</html>
